@@ -26,6 +26,13 @@
 - Gate: if Foundry model deployment is blocked on trial, upgrade to Pay-As-You-Go at that point.
 - Portfolio does not depend on live URL: GitHub repo + azd up one-command deploy + demo video.
 
+## ADR-006 Resource Groups, IaC & Governance
+- Two RGs: rg-mizan-dev-uaen (core, CanNotDelete lock) and rg-mizan-temp-uaen (temp, delete whole RG to clean up).
+- All infra in Bicep (infra/main.bicep), always what-if before deploy.
+- Policy: resource groups must carry a project tag (deny effect, verified).
+- Foundry resource keyless (disableLocalAuth=true); access via Entra RBAC only.
+- Model deployments named by role (chat-mini), not model name, so models can be swapped without code changes.
+
 ## Well-Architected Mapping
 | Pillar | How Mizan addresses it |
 |---|---|
