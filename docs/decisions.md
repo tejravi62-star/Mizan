@@ -22,8 +22,9 @@
 - AI layer: Microsoft secures model infra; I own grounding data, prompts, content filters, output validation, tool permissions.
 
 ## ADR-005 Subscription Model
-- Free Trial ($200 credit) upgraded to Pay-As-You-Go before expiry to keep 12-month free services.
-- After upgrade, budget + anomaly alerts are the main cost controls (no spending limit).
+- Build on Free Trial ($200 credit, spending limit on) within 11-day window.
+- Gate: if Foundry model deployment is blocked on trial, upgrade to Pay-As-You-Go at that point.
+- Portfolio does not depend on live URL: GitHub repo + azd up one-command deploy + demo video.
 
 ## Well-Architected Mapping
 | Pillar | How Mizan addresses it |
