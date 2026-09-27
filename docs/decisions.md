@@ -44,6 +44,10 @@
 - Only the domain pack changes per team; platform and runtime are parameterised and reused.
 - Default isolation: one deployment per team via azd + parameter file. Shared multi-team platform requires per-team indexes, security trimming, and an AI gateway.
 - RBAC granted to Entra groups, never individual users.
+## ADR-009 Parameterised Platform
+- Templates never contain workload-specific values; each team/env gets infra/params/<workload>.<env>.bicepparam.
+- Parameters validated with @allowed/@minLength/@maxLength to fail fast before Azure.
+- Refactors verified with what-if = no change before commit.
 
 ## Well-Architected Mapping
 | Pillar | How Mizan addresses it |
