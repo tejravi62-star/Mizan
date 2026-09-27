@@ -33,6 +33,18 @@
 - Foundry resource keyless (disableLocalAuth=true); access via Entra RBAC only.
 - Model deployments named by role (chat-mini), not model name, so models can be swapped without code changes.
 
+## ADR-007 Compute: Jumpbox VM
+- Free-tier only: Standard_B1s + Premium SSD 64 GB (P6) in zone 1, Ubuntu 24.04, SSH keys only.
+- SSH restricted to my IP via NSG; auto-shutdown 19:00 UTC; deallocate when idle.
+- Lab VM proved Foundry endpoint resolves to a public IP (evidence saved). Private endpoint required (Step 4).
+- VMs are for admin/jumpbox only; app compute is PaaS (App Service, Functions, AKS).
+
+## ADR-008 Reusable Agent Accelerator
+- Three layers: platform (Bicep modules), agent runtime (code), domain pack (data, prompt, tools, evals, groups).
+- Only the domain pack changes per team; platform and runtime are parameterised and reused.
+- Default isolation: one deployment per team via azd + parameter file. Shared multi-team platform requires per-team indexes, security trimming, and an AI gateway.
+- RBAC granted to Entra groups, never individual users.
+
 ## Well-Architected Mapping
 | Pillar | How Mizan addresses it |
 |---|---|
