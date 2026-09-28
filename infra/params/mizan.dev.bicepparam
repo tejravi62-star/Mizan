@@ -19,4 +19,5 @@ param modelDeployments = [
 
 param deployJumpbox = true
 param jumpboxSshPublicKey = readEnvironmentVariable('MIZAN_SSH_PUBKEY', '')
-param aiPublicNetworkAccess = 'Disabled'
+param aiPublicNetworkAccess = 'Enabled'
+param devAllowedIp = readEnvironmentVariable('MIZAN_DEV_IP', '')

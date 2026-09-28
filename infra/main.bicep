@@ -24,9 +24,12 @@ param vnetAddressPrefix string
 @description('Model deployments for this workload (from the domain pack)')
 param modelDeployments array
 
-@description('Foundry public network access. Disabled once private endpoint is verified.')
+@description('Foundry public network access. With no allowed IPs this is effectively private-only.')
 @allowed([ 'Enabled', 'Disabled' ])
-param aiPublicNetworkAccess string = 'Enabled'
+param aiPublicNetworkAccess string = 'Disabled'
+
+@description('Developer public IP allowed to reach Foundry (dev only, read from environment). Empty = none.')
+param devAllowedIp string = ''
 
 @description('Deploy the admin jumpbox into the temp RG')
 param deployJumpbox bool = false
@@ -47,6 +50,8 @@ var aiDnsZones = [
   'privatelink.openai.azure.com'
   'privatelink.services.ai.azure.com'
 ]
+
+var aiAllowedIps = empty(devAllowedIp) ? [] : [ devAllowedIp ]
 
 resource rgCore 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: 'rg-${workload}-${env}-${regionCode}'
@@ -84,6 +89,7 @@ module ai 'modules/ai.bicep' = {
     tags: coreTags
     modelDeployments: modelDeployments
     publicNetworkAccess: aiPublicNetworkAccess
+    allowedIpRanges: aiAllowedIps
   }
 }
 

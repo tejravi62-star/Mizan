@@ -57,3 +57,17 @@
 | Cost | Free tiers, mini/nano models, semantic cache, costmode=temp cleanup |
 | Operational Excellence | IaC, CI/CD, ADRs, App Insights tracing |
 | Performance | Redis cache, hybrid search, autoscale |
+## ADR-010 Network Design
+- Spoke VNet 10.20.0.0/22 (non-default, hub-peering ready). Subnets calculated with cidrSubnet from one parameter.
+- One subnet per role: snet-pe, snet-app (delegated Web), snet-func (delegated App/environments), snet-jump, AzureBastionSubnet, snet-aks; spare ranges reserved.
+- NSGs at subnet level with explicit deny; privateEndpointNetworkPolicies Enabled so NSGs apply to private endpoints.
+- defaultOutboundAccess false everywhere except snet-jump (documented trade-off; NAT Gateway/Firewall is the prod fix).
+- Not deployed (cost): hub, firewall, UDRs, NAT Gateway, VPN/ExpressRoute. Design is spoke-ready.
+
+## ADR-011 Private Endpoints & Access Model
+- Reusable modules: dns.bicep (zones + VNet links) and private-endpoint.bicep (any service, any groupId).
+- Foundry needs 3 zones: privatelink.openai / cognitiveservices / services.ai. Missing zone = silent public resolution.
+- Foundry adopted into Bicep; model version pinned (NoAutoUpgrade); content filter explicit (Microsoft.DefaultV2).
+- networkAcls defaultAction is hard-coded Deny. Dev: publicNetworkAccess Enabled + my IP only (from env var). Prod: Disabled.
+- Proven: internet + valid token = 403; VNet resolves to 10.20.0.5; dev IP + token = 200.
+- Jumpbox: no public IP, reached via Run Command/Bastion, behind a deployJumpbox switch in the temp RG.

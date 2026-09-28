@@ -16,9 +16,12 @@ param tags object
 @description('Model deployments for this workload, supplied by the domain pack')
 param modelDeployments array
 
-@description('Public network access. Enabled until the private endpoint is verified.')
+@description('Public network access. Enabled only matters if allowedIpRanges is non-empty, because defaultAction is always Deny.')
 @allowed([ 'Enabled', 'Disabled' ])
-param publicNetworkAccess string = 'Enabled'
+param publicNetworkAccess string = 'Disabled'
+
+@description('Public IPs/CIDRs allowed to reach the data plane (dev only). Empty = private endpoint only.')
+param allowedIpRanges array = []
 
 var aifName = 'aif-${workload}-${env}-${regionCode}'
 
@@ -37,6 +40,13 @@ resource aif 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
     customSubDomainName: aifName
     disableLocalAuth: true
     publicNetworkAccess: publicNetworkAccess
+    networkAcls: {
+      defaultAction: 'Deny'
+      ipRules: [for ip in allowedIpRanges: {
+        value: ip
+      }]
+      virtualNetworkRules: []
+    }
   }
 }
 
