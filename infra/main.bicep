@@ -28,6 +28,12 @@ param modelDeployments array
 @allowed([ 'Enabled', 'Disabled' ])
 param aiPublicNetworkAccess string = 'Enabled'
 
+@description('Deploy the admin jumpbox into the temp RG')
+param deployJumpbox bool = false
+
+@description('SSH public key for the jumpbox (read from environment, never committed)')
+param jumpboxSshPublicKey string = ''
+
 var baseTags = {
   project: workload
   env: env
@@ -35,6 +41,12 @@ var baseTags = {
 }
 var coreTags = union(baseTags, { costmode: 'core' })
 var tempTags = union(baseTags, { costmode: 'temp' })
+
+var aiDnsZones = [
+  'privatelink.cognitiveservices.azure.com'
+  'privatelink.openai.azure.com'
+  'privatelink.services.ai.azure.com'
+]
 
 resource rgCore 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: 'rg-${workload}-${env}-${regionCode}'
@@ -75,9 +87,48 @@ module ai 'modules/ai.bicep' = {
   }
 }
 
+module dnsAi 'modules/dns.bicep' = {
+  name: 'dns-ai-${workload}-${env}'
+  scope: rgCore
+  params: {
+    zoneNames: aiDnsZones
+    vnetId: network.outputs.vnetId
+    tags: coreTags
+  }
+}
+
+module peAi 'modules/private-endpoint.bicep' = {
+  name: 'pe-ai-${workload}-${env}'
+  scope: rgCore
+  params: {
+    name: 'pe-${workload}-aif-${env}-${regionCode}'
+    location: location
+    subnetId: network.outputs.subnetIds.pe
+    targetResourceId: ai.outputs.aifId
+    groupId: 'account'
+    dnsZoneIds: dnsAi.outputs.zoneIds
+    tags: coreTags
+  }
+}
+
+module jumpbox 'modules/jumpbox.bicep' = if (deployJumpbox) {
+  name: 'jumpbox-${workload}-${env}'
+  scope: rgTemp
+  params: {
+    workload: workload
+    env: env
+    location: location
+    regionCode: regionCode
+    tags: tempTags
+    subnetId: network.outputs.subnetIds.jump
+    sshPublicKey: jumpboxSshPublicKey
+  }
+}
+
 output coreResourceGroup string = rgCore.name
 output tempResourceGroup string = rgTemp.name
 output vnetName string = network.outputs.vnetName
 output subnetIds object = network.outputs.subnetIds
 output aiName string = ai.outputs.aifName
 output aiEndpoint string = ai.outputs.aifEndpoint
+output aiPrivateEndpoint string = peAi.outputs.peName
