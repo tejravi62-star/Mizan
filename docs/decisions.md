@@ -87,3 +87,9 @@
 - Blob private endpoint via the same dns/private-endpoint modules (zone privatelink.blob.core.windows.net, groupId blob): ~15 lines, no new module.
 - RBAC: people = Blob Data Contributor, app identity = Blob Data Reader (least privilege).
 - One container (docs), one prefix per domain pack (uae-labour-law/). Provenance recorded in packs/<pack>/SOURCES.md. English is a translation; Arabic is authoritative.
+
+## ADR-015 Retrieval
+- Ingestion strategy is per pack (pack.json "strategy"). Labour law uses "page": side-column headings are extracted after their bodies, breaking heading-first splitting. Page chunks carry the articles found on that page as metadata; 300-char carry-over keeps cross-page articles together; TOC pages auto-skipped. Citations say "PDF page N" (spreads: printed page numbers differ).
+- Measured: keyword search for "gratuity" missed the relevant page (law says "end of service benefits"); vector found it at #1; hybrid+semantic dropped it to #4 (keyword noise + diluted page chunks).
+- Fix: per-pack glossary query expansion (gratuity -> end of service benefits). Result: keyword #1, hybrid #1 (rerank 1.82 -> 2.14), plus the Executive Regulation's implementing article.
+- Remaining limit: page chunks mix 3-5 articles (moderate rerank ~2). Production fix: Document Intelligence layout -> per-article chunks.
