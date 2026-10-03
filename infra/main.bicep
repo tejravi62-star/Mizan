@@ -216,7 +216,7 @@ module dnsBlob 'modules/dns.bicep' = {
   name: 'dns-blob-${workload}-${env}'
   scope: rgCore
   params: {
-    zoneNames: [ 'privatelink.blob.core.windows.net' ]
+    zoneNames: [ 'privatelink.blob.${environment().suffixes.storage}' ]
     vnetId: network.outputs.vnetId
     tags: coreTags
   }
@@ -238,3 +238,69 @@ module peBlob 'modules/private-endpoint.bicep' = {
 
 output storageName string = storage.outputs.name
 output blobEndpoint string = storage.outputs.blobEndpoint
+
+var roleIdSearchServiceContributor = '7ca78c08-252a-4471-8644-bb5ff32d4ba0'
+var roleIdSearchIndexDataContributor = '8ebe5a00-799e-43f5-93ac-243d3dce84a7'
+var roleIdSearchIndexDataReader = '1407120a-92aa-4202-b7e9-c0e197c71c8f'
+
+var searchUserServiceAssignments = map(aiUsers, p => {
+  principalId: p.principalId
+  principalType: p.principalType
+  roleDefinitionId: roleIdSearchServiceContributor
+})
+
+var searchUserDataAssignments = map(aiUsers, p => {
+  principalId: p.principalId
+  principalType: p.principalType
+  roleDefinitionId: roleIdSearchIndexDataContributor
+})
+
+var searchAppAssignment = [
+  {
+    principalId: appIdentity.outputs.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: roleIdSearchIndexDataReader
+  }
+]
+
+module search 'modules/search.bicep' = {
+  name: 'search-${workload}-${env}'
+  scope: rgCore
+  params: {
+    workload: workload
+    env: env
+    location: location
+    regionCode: regionCode
+    tags: coreTags
+    publicNetworkAccess: aiPublicNetworkAccess
+    allowedIpRanges: aiAllowedIps
+    roleAssignments: concat(searchUserServiceAssignments, searchUserDataAssignments, searchAppAssignment)
+  }
+}
+
+module dnsSearch 'modules/dns.bicep' = {
+  name: 'dns-search-${workload}-${env}'
+  scope: rgCore
+  params: {
+    zoneNames: [ 'privatelink.search.windows.net' ]
+    vnetId: network.outputs.vnetId
+    tags: coreTags
+  }
+}
+
+module peSearch 'modules/private-endpoint.bicep' = {
+  name: 'pe-search-${workload}-${env}'
+  scope: rgCore
+  params: {
+    name: 'pe-${workload}-srch-${env}-${regionCode}'
+    location: location
+    subnetId: network.outputs.subnetIds.pe
+    targetResourceId: search.outputs.id
+    groupId: 'searchService'
+    dnsZoneIds: dnsSearch.outputs.zoneIds
+    tags: coreTags
+  }
+}
+
+output searchName string = search.outputs.name
+output searchEndpoint string = search.outputs.endpoint
