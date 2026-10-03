@@ -179,3 +179,62 @@ var aiAllPrincipals = concat(aiUsers, [
 ])
 
 output appIdentityClientId string = appIdentity.outputs.clientId
+
+var roleIdBlobContributor = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+var roleIdBlobReader = '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
+
+var storageUserAssignments = map(aiUsers, p => {
+  principalId: p.principalId
+  principalType: p.principalType
+  roleDefinitionId: roleIdBlobContributor
+})
+
+var storageAppAssignment = [
+  {
+    principalId: appIdentity.outputs.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: roleIdBlobReader
+  }
+]
+
+module storage 'modules/storage.bicep' = {
+  name: 'storage-${workload}-${env}'
+  scope: rgCore
+  params: {
+    workload: workload
+    env: env
+    location: location
+    tags: coreTags
+    containerNames: [ 'docs' ]
+    publicNetworkAccess: aiPublicNetworkAccess
+    allowedIpRanges: aiAllowedIps
+    roleAssignments: concat(storageUserAssignments, storageAppAssignment)
+  }
+}
+
+module dnsBlob 'modules/dns.bicep' = {
+  name: 'dns-blob-${workload}-${env}'
+  scope: rgCore
+  params: {
+    zoneNames: [ 'privatelink.blob.core.windows.net' ]
+    vnetId: network.outputs.vnetId
+    tags: coreTags
+  }
+}
+
+module peBlob 'modules/private-endpoint.bicep' = {
+  name: 'pe-blob-${workload}-${env}'
+  scope: rgCore
+  params: {
+    name: 'pe-${workload}-st-blob-${env}-${regionCode}'
+    location: location
+    subnetId: network.outputs.subnetIds.pe
+    targetResourceId: storage.outputs.id
+    groupId: 'blob'
+    dnsZoneIds: dnsBlob.outputs.zoneIds
+    tags: coreTags
+  }
+}
+
+output storageName string = storage.outputs.name
+output blobEndpoint string = storage.outputs.blobEndpoint
