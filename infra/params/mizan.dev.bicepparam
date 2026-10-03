@@ -15,12 +15,20 @@ param modelDeployments = [
     sku: 'GlobalStandard'
     capacity: 10
   }
+  {
+    name: 'embed-small'
+    model: 'text-embedding-3-small'
+    version: '1'
+    sku: 'GlobalStandard'
+    capacity: 30
+  }
 ]
+
+param aiPublicNetworkAccess = 'Enabled'
+param devAllowedIp = readEnvironmentVariable('MIZAN_DEV_IP', '')
 
 param deployJumpbox = true
 param jumpboxSshPublicKey = readEnvironmentVariable('MIZAN_SSH_PUBKEY', '')
-param aiPublicNetworkAccess = 'Enabled'
-param devAllowedIp = readEnvironmentVariable('MIZAN_DEV_IP', '')
 
 param aiUsers = [
   {
