@@ -80,3 +80,10 @@
 - CanNotDelete lock moved into Bicep; it also blocks deleting child role assignments (unlock is a deliberate change).
 - Key Vault deferred: no secrets exist. Would be added (private endpoint, RBAC mode, purge protection on in prod / off in dev for teardown) for third-party keys. Secrets as params must use @secure() (deployment history stores plain params).
 - Conditional Access / MFA: tenant-owned by IT; app design assumes CA applies to human sign-in, managed identities are exempt.
+
+## ADR-013 Document Storage
+- StorageV2 Standard_LRS Hot (free meter), name = take('st'+workload+env+uniqueString(rg.id), 24) for global uniqueness and stable redeploys.
+- No shared keys, no public blobs, TLS1.2, defaultAction Deny + dev IP, bypass AzureServices (for AI Search later).
+- Blob private endpoint via the same dns/private-endpoint modules (zone privatelink.blob.core.windows.net, groupId blob): ~15 lines, no new module.
+- RBAC: people = Blob Data Contributor, app identity = Blob Data Reader (least privilege).
+- One container (docs), one prefix per domain pack (uae-labour-law/). Provenance recorded in packs/<pack>/SOURCES.md. English is a translation; Arabic is authoritative.
