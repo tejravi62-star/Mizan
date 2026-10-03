@@ -71,3 +71,12 @@
 - networkAcls defaultAction is hard-coded Deny. Dev: publicNetworkAccess Enabled + my IP only (from env var). Prod: Disabled.
 - Proven: internet + valid token = 403; VNet resolves to 10.20.0.5; dev IP + token = 200.
 - Jumpbox: no public IP, reached via Run Command/Bastion, behind a deployJumpbox switch in the temp RG.
+
+## ADR-012 Identity & Access
+- Order of preference: managed identity > service principal > keys. Mizan has zero secrets today.
+- RBAC in code (AVM-style roleAssignments), deterministic GUIDs, role fixed by template; parameter file only says who.
+- App runs as user-assigned identity id-mizan-app (roles granted before the app exists; shared by App Service/Functions/AKS).
+- Company tenant blocks group creation for developers: users assigned today, group IDs later with no template change. scripts/entra-setup.sh is the admin handover. Activity disclosed to manager/IT as a learning sandbox.
+- CanNotDelete lock moved into Bicep; it also blocks deleting child role assignments (unlock is a deliberate change).
+- Key Vault deferred: no secrets exist. Would be added (private endpoint, RBAC mode, purge protection on in prod / off in dev for teardown) for third-party keys. Secrets as params must use @secure() (deployment history stores plain params).
+- Conditional Access / MFA: tenant-owned by IT; app design assumes CA applies to human sign-in, managed identities are exempt.
