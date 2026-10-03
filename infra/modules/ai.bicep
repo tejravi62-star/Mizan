@@ -73,3 +73,16 @@ output aifId string = aif.id
 output aifName string = aif.name
 output aifEndpoint string = aif.properties.endpoint
 output aifPrincipalId string = aif.identity.principalId
+
+@description('AVM-style role assignments on this Foundry resource: [{ principalId, principalType, roleDefinitionId }]')
+param roleAssignments array = []
+
+resource aifRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for r in roleAssignments: {
+  name: guid(aif.id, r.principalId, r.roleDefinitionId)
+  scope: aif
+  properties: {
+    principalId: r.principalId
+    principalType: r.principalType
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', r.roleDefinitionId)
+  }
+}]

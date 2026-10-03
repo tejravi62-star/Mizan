@@ -21,3 +21,10 @@ param deployJumpbox = true
 param jumpboxSshPublicKey = readEnvironmentVariable('MIZAN_SSH_PUBKEY', '')
 param aiPublicNetworkAccess = 'Enabled'
 param devAllowedIp = readEnvironmentVariable('MIZAN_DEV_IP', '')
+
+param aiUsers = [
+  {
+    principalId: 'ed9a2afa-9598-4158-a131-af58e7e38257'
+    principalType: 'User'
+  }
+]

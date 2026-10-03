@@ -90,6 +90,7 @@ module ai 'modules/ai.bicep' = {
     modelDeployments: modelDeployments
     publicNetworkAccess: aiPublicNetworkAccess
     allowedIpRanges: aiAllowedIps
+    roleAssignments: aiRoleAssignments
   }
 }
 
@@ -138,3 +139,43 @@ output subnetIds object = network.outputs.subnetIds
 output aiName string = ai.outputs.aifName
 output aiEndpoint string = ai.outputs.aifEndpoint
 output aiPrivateEndpoint string = peAi.outputs.peName
+
+module coreLock 'modules/lock.bicep' = {
+  name: 'lock-${workload}-${env}'
+  scope: rgCore
+  params: {
+    name: 'lock-${workload}-core'
+  }
+}
+
+@description('Principals who can call Foundry models: [{ principalId, principalType }]. Users today, groups when the identity team provides them.')
+param aiUsers array = []
+
+var roleIdOpenAiUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+
+var aiRoleAssignments = map(aiAllPrincipals, p => {
+  principalId: p.principalId
+  principalType: p.principalType
+  roleDefinitionId: roleIdOpenAiUser
+})
+
+module appIdentity 'modules/identity.bicep' = {
+  name: 'identity-${workload}-${env}'
+  scope: rgCore
+  params: {
+    workload: workload
+    env: env
+    location: location
+    regionCode: regionCode
+    tags: coreTags
+  }
+}
+
+var aiAllPrincipals = concat(aiUsers, [
+  {
+    principalId: appIdentity.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+])
+
+output appIdentityClientId string = appIdentity.outputs.clientId
