@@ -13,7 +13,7 @@ param modelDeployments = [
     model: 'gpt-5.4-mini'
     version: '2026-03-17'
     sku: 'GlobalStandard'
-    capacity: 10
+    capacity: 50
   }
   {
     name: 'embed-small'
