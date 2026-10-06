@@ -113,8 +113,10 @@ def run(question: str, history: list | None = None) -> dict:
             result_text = json.dumps(result, ensure_ascii=False)
             if name != "search_law":
                 allowed_numbers |= numbers_in(result_text)
+            sources = ([f"{r['source']} (PDF page {r['pdf_page']})" for r in result]
+                       if name == "search_law" and isinstance(result, list) else None)
             trace.append({"step": step, "action": f"tool:{name}", "args": args, "llm_ms": llm_ms,
-                          "tool_ms": int((time.perf_counter() - t1) * 1000)})
+                          "tool_ms": int((time.perf_counter() - t1) * 1000), "sources": sources})
             messages.append({"role": "tool", "tool_call_id": call.id, "content": result_text})
 
     trace.append({"step": MAX_STEPS, "action": "guard:step_limit"})
